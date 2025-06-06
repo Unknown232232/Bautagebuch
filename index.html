@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bautagebuch - Professionelle Baudokumentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-tabs {
+            background: white;
+            padding: 0;
+            margin: 2rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: #ecf0f1;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #2c3e50;
+            box-shadow: 0 -3px 0 #3498db inset;
+        }
+
+        .tab-button:hover {
+            background: #d5dbdb;
+        }
+
+        .tab-content {
+            padding: 2rem;
+            background: white;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+        }
+
+        .entry-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .entry-date {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .entry-weather {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .entry-content {
+            line-height: 1.8;
+            color: #2c3e50;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-top: 4px solid #3498db;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .photo-upload-area {
+            border: 2px dashed #bdc3c7;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload-area:hover {
+            border-color: #3498db;
+            background-color: #f8f9fa;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .project-info {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .tab-buttons {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Bautagebuch</h1>
+            <p>Professionelle Dokumentation Ihres Bauprojekts</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="project-info">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Projektname</span>
+                    <span class="info-value" id="project-name">Mein Bauprojekt</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Baubeginn</span>
+                    <span class="info-value" id="start-date">01.01.2024</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Bauherr</span>
+                    <span class="info-value" id="builder-name">Max Mustermann</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Status</span>
+                    <span class="info-value" id="project-status">In Bearbeitung</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="showTab('overview')">Übersicht</button>
+                <button class="tab-button" onclick="showTab('entries')">Einträge</button>
+                <button class="tab-button" onclick="showTab('photos')">Fotos</button>
+                <button class="tab-button" onclick="showTab('settings')">Einstellungen</button>
+            </div>
+
+            <div class="tab-content">
+                <!-- Übersicht Tab -->
+                <div id="overview" class="tab-pane active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-entries">12</div>
+                            <div class="stat-label">Gesamte Einträge</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-photos">48</div>
+                            <div class="stat-label">Fotos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="project-days">89</div>
+                            <div class="stat-label">Projekttage</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="completion">65%</div>
+                            <div class="stat-label">Fortschritt</div>
+                        </div>
+                    </div>
+
+                    <h3>Letzte Einträge</h3>
+                    <div id="recent-entries">
+                        <div class="entry-card">
+                            <div class="entry-header">
+                                <span class="entry-date">15.05.2024</span>
+                                <span class="entry-weather">☀️ 22°C, sonnig</span>
+                            </div>
+                            <div class="entry-content">
+                                Heute wurde mit den Maurerarbeiten für das Erdgeschoss begonnen. Die Lieferung der Ziegel erfolgte pünktlich um 8:00 Uhr. Das Wetter war optimal für die Arbeiten.
+                            </div>
+                        </div>
+                        
+                        <div class="entry-card">
+                            <div class="entry-header">
+                                <span class="entry-date">14.05.2024</span>
+                                <span class="entry-weather">⛅ 18°C, bewölkt</span>
+                            </div>
+                            <div class="entry-content">
+                                Fundamentarbeiten wurden erfolgreich abgeschlossen. Qualitätskontrolle durch Bauleiter bestanden. Morgen kann mit dem Hochbau begonnen werden.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Einträge Tab -->
+                <div id="entries" class="tab-pane">
+                    <form id="entry-form">
+                        <div class="form-group">
+                            <label for="entry-date">Datum</label>
+                            <input type="date" id="entry-date" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="weather">Wetter</label>
+                            <select id="weather" class="form-control">
+                                <option value="☀️ sonnig">☀️ Sonnig</option>
+                                <option value="⛅ bewölkt">⛅ Bewölkt</option>
+                                <option value="🌧️ regnerisch">🌧️ Regnerisch</option>
+                                <option value="❄️ schnee">❄️ Schnee</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="temperature">Temperatur (°C)</label>
+                            <input type="number" id="temperature" class="form-control" placeholder="z.B. 22">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="entry-content">Tagesbericht</label>
+                            <textarea id="entry-content" class="form-control" placeholder="Beschreiben Sie die heutigen Baufortschritte..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="workers">Anzahl Arbeiter</label>
+                            <input type="number" id="workers" class="form-control" placeholder="z.B. 5">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="materials">Verwendete Materialien</label>
+                            <textarea id="materials" class="form-control" placeholder="Liste der verwendeten Materialien..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Eintrag speichern</button>
+                    </form>
+                </div>
+
+                <!-- Fotos Tab -->
+                <div id="photos" class="tab-pane">
+                    <div class="photo-upload-area" onclick="document.getElementById('photo-input').click()">
+                        <p>📷 Klicken Sie hier, um Fotos hochzuladen</p>
+                        <p style="font-size: 0.9rem; color: #7f8c8d;">Unterstützte Formate: JPG, PNG, GIF</p>
+                        <input type="file" id="photo-input" multiple accept="image/*" style="display: none;">
+                    </div>
+
+                    <div class="photo-grid" id="photo-grid">
+                        <!-- Beispielfotos -->
+                        <div class="photo-item">
+                            <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='150' viewBox='0 0 200 150'><rect width='200' height='150' fill='%23f0f0f0'/><text x='100' y='75' text-anchor='middle' fill='%23999' font-family='Arial' font-size='14'>Fundament</text></svg>" alt="Fundament">
+                        </div>
+                        <div class="photo-item">
+                            <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='150' viewBox='0 0 200 150'><rect width='200' height='150' fill='%23e8e8e8'/><text x='100' y='75' text-anchor='middle' fill='%23666' font-family='Arial' font-size='14'>Rohbau</text></svg>" alt="Rohbau">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Einstellungen Tab -->
+                <div id="settings" class="tab-pane">
+                    <form id="settings-form">
+                        <div class="form-group">
+                            <label for="project-name-input">Projektname</label>
+                            <input type="text" id="project-name-input" class="form-control" value="Mein Bauprojekt">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="builder-name-input">Bauherr</label>
+                            <input type="text" id="builder-name-input" class="form-control" value="Max Mustermann">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="start-date-input">Baubeginn</label>
+                            <input type="date" id="start-date-input" class="form-control" value="2024-01-01">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="project-status-input">Projektstatus</label>
+                            <select id="project-status-input" class="form-control">
+                                <option value="Planung">Planung</option>
+                                <option value="In Bearbeitung" selected>In Bearbeitung</option>
+                                <option value="Abgeschlossen">Abgeschlossen</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">Einstellungen speichern</button>
+                        <button type="button" class="btn btn-primary" onclick="exportData()">Daten exportieren</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab-Funktionalität
+        function showTab(tabName) {
+            // Alle Tab-Panes verstecken
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+            
+            // Alle Tab-Buttons deaktivieren
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            // Gewählten Tab anzeigen
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Heutiges Datum setzen
+        document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+        // Entry Form Handler
+        document.getElementById('entry-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('entry-date').value;
+            const weather = document.getElementById('weather').value;
+            const temperature = document.getElementById('temperature').value;
+            const content = document.getElementById('entry-content').value;
+            
+            // Neuen Eintrag erstellen
+            const entryHTML = `
+                <div class="entry-card">
+                    <div class="entry-header">
+                        <span class="entry-date">${new Date(date).toLocaleDateString('de-DE')}</span>
+                        <span class="entry-weather">${weather} ${temperature}°C</span>
+                    </div>
+                    <div class="entry-content">${content}</div>
+                </div>
+            `;
+            
+            // Eintrag zur Übersicht hinzufügen
+            const recentEntries = document.getElementById('recent-entries');
+            recentEntries.insertAdjacentHTML('afterbegin', entryHTML);
+            
+            // Statistiken aktualisieren
+            const totalEntries = document.getElementById('total-entries');
+            totalEntries.textContent = parseInt(totalEntries.textContent) + 1;
+            
+            // Formular zurücksetzen
+            this.reset();
+            document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+            
+            alert('Eintrag erfolgreich gespeichert!');
+        });
+
+        // Settings Form Handler
+        document.getElementById('settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Werte aus Formular lesen
+            const projectName = document.getElementById('project-name-input').value;
+            const builderName = document.getElementById('builder-name-input').value;
+            const startDate = new Date(document.getElementById('start-date-input').value).toLocaleDateString('de-DE');
+            const projectStatus = document.getElementById('project-status-input').value;
+            
+            // Header-Informationen aktualisieren
+            document.getElementById('project-name').textContent = projectName;
+            document.getElementById('builder-name').textContent = builderName;
+            document.getElementById('start-date').textContent = startDate;
+            document.getElementById('project-status').textContent = projectStatus;
+            
+            alert('Einstellungen gespeichert!');
+        });
+
+        // Foto Upload Handler
+        document.getElementById('photo-input').addEventListener('change', function(e) {
+            const files = e.target.files;
+            const photoGrid = document.getElementById('photo-grid');
+            
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const photoHTML = `
+                            <div class="photo-item">
+                                <img src="${e.target.result}" alt="Bauprojekt Foto">
+                            </div>
+                        `;
+                        photoGrid.insertAdjacentHTML('beforeend', photoHTML);
+                        
+                        // Foto-Counter aktualisieren
+                        const totalPhotos = document.getElementById('total-photos');
+                        totalPhotos.textContent = parseInt(totalPhotos.textContent) + 1;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+
+        // Export Funktion
+        function exportData() {
+            const projectData = {
+                projectName: document.getElementById('project-name').textContent,
+                builderName: document.getElementById('builder-name').textContent,
+                startDate: document.getElementById('start-date').textContent,
+                status: document.getElementById('project-status').textContent,
+                entries: []
+            };
+            
+            // Einträge sammeln
+            const entryCards = document.querySelectorAll('.entry-card');
+            entryCards.forEach(card => {
+                const date = card.querySelector('.entry-date').textContent;
+                const weather = card.querySelector('.entry-weather').textContent;
+                const content = card.querySelector('.entry-content').textContent;
+                
+                projectData.entries.push({ date, weather, content });
+            });
+            
+            // JSON Download
+            const dataStr = JSON.stringify(projectData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'bautagebuch_export.json';
+            link.click();
+            
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
