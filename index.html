@@ -351,8 +351,12 @@
                             <div class="stat-label">Projekttage</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number" id="completion">65%</div>
-                            <div class="stat-label">Fortschritt</div>
+                            <div class="stat-number" id="total-hours">156</div>
+                            <div class="stat-label">Arbeitsstunden</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-costs">€12,450</div>
+                            <div class="stat-label">Gesamtkosten</div>
                         </div>
                     </div>
 
@@ -367,7 +371,7 @@
                                 Heute wurde mit den Maurerarbeiten für das Erdgeschoss begonnen. Die Lieferung der Ziegel erfolgte pünktlich um 8:00 Uhr. Das Wetter war optimal für die Arbeiten.
                             </div>
                         </div>
-                        
+
                         <div class="entry-card">
                             <div class="entry-header">
                                 <span class="entry-date">14.05.2024</span>
@@ -387,7 +391,7 @@
                             <label for="entry-date">Datum</label>
                             <input type="date" id="entry-date" class="form-control" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="weather">Wetter</label>
                             <select id="weather" class="form-control">
@@ -416,6 +420,21 @@
                         <div class="form-group">
                             <label for="materials">Verwendete Materialien</label>
                             <textarea id="materials" class="form-control" placeholder="Liste der verwendeten Materialien..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="work-hours">Arbeitsstunden</label>
+                            <input type="number" id="work-hours" class="form-control" step="0.5" placeholder="z.B. 8.5">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="costs">Kosten (€)</label>
+                            <input type="number" id="costs" class="form-control" step="0.01" placeholder="z.B. 1250.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">Notizen</label>
+                            <textarea id="notes" class="form-control" placeholder="Zusätzliche Notizen..."></textarea>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Eintrag speichern</button>
@@ -470,6 +489,8 @@
 
                         <button type="submit" class="btn btn-success">Einstellungen speichern</button>
                         <button type="button" class="btn btn-primary" onclick="exportData()">Daten exportieren</button>
+                        <button type="button" class="btn btn-danger" onclick="clearAllData()">Alle Daten löschen</button>
+                        <button type="button" class="btn btn-primary" onclick="loadFromServer()">Vom Server laden</button>
                     </form>
                 </div>
             </div>

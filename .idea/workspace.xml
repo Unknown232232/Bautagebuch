@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e76adb66-9c97-4ce2-9f15-a883345bd8d4" name="Changes" comment="index.html wurde Hinzugefügt" />
+    <list default="true" id="e76adb66-9c97-4ce2-9f15-a883345bd8d4" name="Changes" comment="app.py und requirements wurden hinzugefügt" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -42,16 +42,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
-    &quot;Python.Alles.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/denni/Desktop/Bautagebuch&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Python.Alles.executor": "Run",
+    "Python.main.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Users/denni/Desktop/Bautagebuch",
+    "settings.editor.selected.configurable": "preferences.keymap"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -92,13 +93,30 @@
       <option name="project" value="LOCAL" />
       <updated>1749224905263</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="index.html wurde Hinzugefügt">
+      <option name="closed" value="true" />
+      <created>1749225320720</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1749225320720</updated>
+    </task>
+    <task id="LOCAL-00005" summary="app.py und requirements wurden hinzugefügt">
+      <option name="closed" value="true" />
+      <created>1749225829219</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1749225829219</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Aktueller Stand" />
     <MESSAGE value="index.html wurde Hinzugefügt" />
-    <option name="LAST_COMMIT_MESSAGE" value="index.html wurde Hinzugefügt" />
+    <MESSAGE value="app.py und requirements wurden hinzugefügt" />
+    <option name="LAST_COMMIT_MESSAGE" value="app.py und requirements wurden hinzugefügt" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
