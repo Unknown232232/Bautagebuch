@@ -1,4 +1,288 @@
-<!DOCTYPE html>
+    <script>
+        // API Base URL
+        const API_BASE = window.location.origin + '/api';
+
+        // Globale Variablen
+        let currentProject = null;
+        let allEntries = [];
+        let allPhotos = [];
+
+        // Beim Laden der Seite
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProjectData();
+            loadEntries();
+            loadPhotos();
+            loadStats();
+        });
+
+        // API Hilfsfunktionen
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(API_BASE + endpoint, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API Request failed:', error);
+                showNotification('Fehler beim Laden der Daten', 'error');
+                return null;
+            }
+        }
+
+        // Projektdaten laden
+        async function loadProjectData() {
+            const project = await apiRequest('/project');
+            if (project) {
+                currentProject = project;
+                updateProjectDisplay(project);
+            }
+        }
+
+        // Projektanzeige aktualisieren
+        function updateProjectDisplay(project) {
+            document.getElementById('project-name').textContent = project.name;
+            document.getElementById('builder-name').textContent = project.builder_name;
+            document.getElementById('start-date').textContent = new Date(project.start_date).toLocaleDateString('de-DE');
+            document.getElementById('project-status').textContent = project.status;
+
+            // Formularfelder aktualisieren
+            document.getElementById('project-name-input').value = project.name;
+            document.getElementById('builder-name-input').value = project.builder_name;
+            document.getElementById('start-date-input').value = project.start_date;
+            document.getElementById('project-status-input').value = project.status;
+        }
+
+        // Einträge laden
+        async function loadEntries() {
+            const entries = await apiRequest('/entries');
+            if (entries) {
+                allEntries = entries;
+                displayRecentEntries(entries.slice(0, 3));
+            }
+        }
+
+        // Letzte Einträge anzeigen
+        function displayRecentEntries(entries) {
+            const container = document.getElementById('recent-entries');
+            container.innerHTML = '';
+
+            entries.forEach(entry => {
+                const entryHTML = createEntryHTML(entry);
+                container.insertAdjacentHTML('beforeend', entryHTML);
+            });
+        }
+
+        // Eintrag HTML erstellen
+        function createEntryHTML(entry) {
+            const date = new Date(entry.date).toLocaleDateString('de-DE');
+            const weather = entry.weather || '';
+            const temperature = entry.temperature ? `${entry.temperature}°C` : '';
+            const weatherDisplay = `${weather} ${temperature}`.trim();
+
+            return `
+                <div class="entry-card" data-entry-id="${entry.id}">
+                    <div class="entry-header">
+                        <span class="entry-date">${date}</span>
+                        <span class="entry-weather">${weatherDisplay}</span>
+                        <button class="btn btn-danger btn-sm" onclick="deleteEntry(${entry.id})">Löschen</button>
+                    </div>
+                    <div class="entry-content">${entry.content}</div>
+                    ${entry.materials ? `<div class="entry-materials"><strong>Materialien:</strong> ${entry.materials}</div>` : ''}
+                    ${entry.work_hours ? `<div class="entry-hours"><strong>Arbeitsstunden:</strong> ${entry.work_hours}h</div>` : ''}
+                    ${entry.costs ? `<div class="entry-costs"><strong>Kosten:</strong> €${entry.costs}</div>` : ''}
+                </div>
+            `;
+        }
+
+        // Fotos laden
+        async function loadPhotos() {
+            const photos = await apiRequest('/photos');
+            if (photos) {
+                allPhotos = photos;
+                displayPhotos(photos);
+            }
+        }
+
+        // Fotos anzeigen
+        function displayPhotos(photos) {
+            const container = document.getElementById('photo-grid');
+            // Beispielfotos entfernen
+            container.innerHTML = '';
+
+            photos.forEach(photo => {
+                const photoHTML = `
+                    <div class="photo-item" data-photo-id="${photo.id}">
+                        <img src="${photo.url}" alt="${photo.description || 'Baustellenfoto'}">
+                        <div class="photo-controls">
+                            <button class="btn btn-danger btn-sm" onclick="deletePhoto(${photo.id})">Löschen</button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', photoHTML);
+            });
+        }
+
+        // Statistiken laden
+        async function loadStats() {
+            const stats = await apiRequest('/stats');
+            if (stats) {
+                document.getElementById('total-entries').textContent = stats.total_entries;
+                document.getElementById('total-photos').textContent = stats.total_photos;
+                document.getElementById('project-days').textContent = stats.project_days;
+                document.getElementById('total-hours').textContent = stats.total_hours;
+                document.getElementById('total-costs').textContent = `€${stats.total_costs.toLocaleString('de-DE', {minimumFractionDigits: 2})}`;
+            }
+        }
+
+        // Notification anzeigen
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 4px;
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                background: ${type === 'success' ? '#27ae60' : '#e74c3c'};
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Tab-Funktionalität
+        function showTab(tabName) {
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Heutiges Datum setzen
+        document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+        // Entry Form Handler
+        document.getElementById('entry-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                date: document.getElementById('entry-date').value,
+                weather: document.getElementById('weather').value,
+                temperature: document.getElementById('temperature').value,
+                content: document.getElementById('entry-content').value,
+                workers_count: document.getElementById('workers').value,
+                materials: document.getElementById('materials').value,
+                work_hours: document.getElementById('work-hours').value,
+                costs: document.getElementById('costs').value,
+                notes: document.getElementById('notes').value
+            };
+
+            const result = await apiRequest('/entries', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+
+            if (result && result.success) {
+                showNotification('Eintrag erfolgreich gespeichert!');
+                this.reset();
+                document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+                // Daten neu laden
+                loadEntries();
+                loadStats();
+            }
+        });
+
+        // Settings Form Handler
+        document.getElementById('settings-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('project-name-input').value,
+                builder_name: document.getElementById('builder-name-input').value,
+                start_date: document.getElementById('start-date-input').value,
+                status: document.getElementById('project-status-input').value
+            };
+
+            const result = await apiRequest('/project', {
+                method: 'PUT',
+                body: JSON.stringify(formData)
+            });
+
+            if (result && result.success) {
+                showNotification('Einstellungen gespeichert!');
+                loadProjectData();
+                loadStats();
+            }
+        });
+
+        // Foto Upload Handler
+        document.getElementById('photo-input').addEventListener('change', async function(e) {
+            const files = e.target.files;
+
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('description', '');
+
+                    try {
+                        const response = await fetch(API_BASE + '/photos', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            showNotification('Foto erfolgreich hochgeladen!');
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        showNotification('Fehler beim Hochladen', 'error');
+                    }
+                }
+            }
+
+            // Nach Upload neu laden
+            setTimeout(() => {
+                loadPhotos();
+                loadStats();
+            }, 1000);
+        });
+
+        // Eintrag löschen
+        async function deleteEntry(entryId) {
+            if (confirm('Eintrag wirklich löschen?')) {
+                const result = await apiRequest(`/entries/${entryId}`, {
+                    method: 'DELETE'
+                });
+
+                if (result && result.success) {
+                    showNotification('Eintrag gelöscht');
+                    loa<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -630,3 +914,223 @@
     </script>
 </body>
 </html>
+
+    // PDF-Export Funktionen für das Frontend
+// Diese Funktionen in die bestehende JavaScript-Datei oder in index.html einbinden
+
+// Komplettes Bautagebuch als PDF exportieren
+function exportPDF() {
+    showLoading('PDF wird erstellt...');
+
+    fetch('/api/export/pdf')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('PDF-Export fehlgeschlagen');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // PDF Download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `Bautagebuch_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            hideLoading();
+            showAlert('PDF erfolgreich erstellt!', 'success');
+        })
+        .catch(error => {
+            hideLoading();
+            showAlert('Fehler beim PDF-Export: ' + error.message, 'error');
+            console.error('PDF Export Error:', error);
+        });
+}
+
+// Einzelnen Eintrag als PDF exportieren
+function exportEntryPDF(entryId) {
+    showLoading('PDF wird erstellt...');
+
+    fetch(`/api/export/pdf/entry/${entryId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('PDF-Export fehlgeschlagen');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // PDF Download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `Eintrag_${entryId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            hideLoading();
+            showAlert('PDF erfolgreich erstellt!', 'success');
+        })
+        .catch(error => {
+            hideLoading();
+            showAlert('Fehler beim PDF-Export: ' + error.message, 'error');
+            console.error('PDF Export Error:', error);
+        });
+}
+
+// Loading-Anzeige Funktionen
+function showLoading(message = 'Lade...') {
+    let loadingDiv = document.getElementById('loading-overlay');
+    if (!loadingDiv) {
+        loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loading-overlay';
+        loadingDiv.innerHTML = `
+            <div class="loading-content">
+                <div class="spinner"></div>
+                <p id="loading-message">${message}</p>
+            </div>
+        `;
+        document.body.appendChild(loadingDiv);
+    } else {
+        document.getElementById('loading-message').textContent = message;
+        loadingDiv.style.display = 'flex';
+    }
+}
+
+function hideLoading() {
+    const loadingDiv = document.getElementById('loading-overlay');
+    if (loadingDiv) {
+        loadingDiv.style.display = 'none';
+    }
+}
+
+// Alert-Funktion
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.textContent = message;
+
+    // Alert Styling
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        max-width: 300px;
+        word-wrap: break-word;
+    `;
+
+    // Typ-spezifische Farben
+    switch(type) {
+        case 'success':
+            alertDiv.style.backgroundColor = '#28a745';
+            break;
+        case 'error':
+            alertDiv.style.backgroundColor = '#dc3545';
+            break;
+        case 'warning':
+            alertDiv.style.backgroundColor = '#ffc107';
+            alertDiv.style.color = '#000';
+            break;
+        default:
+            alertDiv.style.backgroundColor = '#17a2b8';
+    }
+
+    document.body.appendChild(alertDiv);
+
+    // Auto-remove nach 3 Sekunden
+    setTimeout(() => {
+        if (document.body.contains(alertDiv)) {
+            document.body.removeChild(alertDiv);
+        }
+    }, 3000);
+}
+
+// CSS für Loading-Overlay hinzufügen
+const loadingStyles = `
+<style>
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loading-message {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+</style>
+`;
+
+// Styles zum Head hinzufügen
+document.head.insertAdjacentHTML('beforeend', loadingStyles);
+
+// Export-Buttons zu bestehenden Bereichen hinzufügen
+function addExportButtons() {
+    // Haupt-Export-Button zur Toolbar/Header hinzufügen
+    const toolbar = document.querySelector('.toolbar') || document.querySelector('.header') || document.querySelector('nav');
+    if (toolbar) {
+        const exportBtn = document.createElement('button');
+        exportBtn.innerHTML = '📄 PDF Export';
+        exportBtn.className = 'btn btn-secondary';
+        exportBtn.onclick = exportPDF;
+        exportBtn.style.marginLeft = '10px';
+        toolbar.appendChild(exportBtn);
+    }
+
+    // Export-Buttons zu einzelnen Einträgen hinzufügen
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('export-entry-btn')) {
+            const entryId = e.target.dataset.entryId;
+            if (entryId) {
+                exportEntryPDF(entryId);
+            }
+        }
+    });
+}
+
+// Buttons hinzufügen wenn DOM bereit ist
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', addExportButtons);
+} else {
+    addExportButtons();
+}

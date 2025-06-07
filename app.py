@@ -6,6 +6,15 @@ import os
 import json
 from werkzeug.utils import secure_filename
 import uuid
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch, cm
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+import io
+import base64
+from PIL import Image as PILImage
 
 app = Flask(__name__)
 
@@ -336,6 +345,360 @@ def export_data():
         })
     
     return jsonify(export_data)
+
+# Neue Route für PDF-Export hinzufügen:
+
+@app.route('/api/export/pdf', methods=['GET'])
+def export_pdf():
+    """Bautagebuch als PDF exportieren"""
+    try:
+        project = get_or_create_project()
+        entries = Entry.query.filter_by(project_id=project.id).order_by(Entry.date.asc()).all()
+        photos = Photo.query.filter_by(project_id=project.id).order_by(Photo.date_taken.asc()).all()
+
+        # PDF in Memory erstellen
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=2 * cm,
+            leftMargin=2 * cm,
+            topMargin=2 * cm,
+            bottomMargin=2 * cm
+        )
+
+        # Styles definieren
+        styles = getSampleStyleSheet()
+
+        # Custom Styles
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Title'],
+            fontSize=24,
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            textColor=colors.darkblue
+        )
+
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading1'],
+            fontSize=16,
+            spaceAfter=12,
+            spaceBefore=20,
+            textColor=colors.darkblue
+        )
+
+        subheading_style = ParagraphStyle(
+            'CustomSubHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=6,
+            spaceBefore=12,
+            textColor=colors.darkgreen
+        )
+
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=6,
+            alignment=TA_LEFT
+        )
+
+        # PDF Content aufbauen
+        story = []
+
+        # Titel
+        story.append(Paragraph("Bautagebuch", title_style))
+        story.append(Paragraph(f"Projekt: {project.name}", heading_style))
+        story.append(Spacer(1, 20))
+
+        # Projektinformationen
+        story.append(Paragraph("Projektinformationen", heading_style))
+
+        project_data = [
+            ['Projektname:', project.name],
+            ['Bauherr:', project.builder_name],
+            ['Startdatum:', project.start_date.strftime('%d.%m.%Y')],
+            ['Status:', project.status],
+            ['Beschreibung:', project.description or 'Keine Beschreibung']
+        ]
+
+        project_table = Table(project_data, colWidths=[4 * cm, 12 * cm])
+        project_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ]))
+
+        story.append(project_table)
+        story.append(Spacer(1, 20))
+
+        # Statistiken
+        total_entries = len(entries)
+        total_photos = len(photos)
+        project_days = (date.today() - project.start_date).days + 1
+        total_costs = sum(entry.costs or 0 for entry in entries)
+        total_hours = sum(entry.work_hours or 0 for entry in entries)
+
+        story.append(Paragraph("Projektstatistiken", heading_style))
+
+        stats_data = [
+            ['Gesamte Einträge:', str(total_entries)],
+            ['Gesamte Fotos:', str(total_photos)],
+            ['Projekttage:', str(project_days)],
+            ['Gesamtkosten:', f"{total_costs:.2f} €"],
+            ['Gesamtarbeitsstunden:', f"{total_hours:.1f} h"]
+        ]
+
+        stats_table = Table(stats_data, colWidths=[4 * cm, 12 * cm])
+        stats_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 11),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+        ]))
+
+        story.append(stats_table)
+        story.append(PageBreak())
+
+        # Einträge
+        story.append(Paragraph("Bautagebuch-Einträge", heading_style))
+        story.append(Spacer(1, 12))
+
+        for i, entry in enumerate(entries):
+            # Datum als Überschrift
+            story.append(Paragraph(
+                f"Eintrag {i + 1}: {entry.date.strftime('%d.%m.%Y')}",
+                subheading_style
+            ))
+
+            # Entry Details Table
+            entry_data = []
+
+            if entry.weather:
+                entry_data.append(['Wetter:', entry.weather])
+            if entry.temperature:
+                entry_data.append(['Temperatur:', f"{entry.temperature}°C"])
+            if entry.workers_count:
+                entry_data.append(['Arbeiter:', str(entry.workers_count)])
+            if entry.work_hours:
+                entry_data.append(['Arbeitsstunden:', f"{entry.work_hours} h"])
+            if entry.costs:
+                entry_data.append(['Kosten:', f"{entry.costs:.2f} €"])
+
+            if entry_data:
+                entry_table = Table(entry_data, colWidths=[3 * cm, 8 * cm])
+                entry_table.setStyle(TableStyle([
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ]))
+                story.append(entry_table)
+                story.append(Spacer(1, 8))
+
+            # Arbeitsinhalt
+            story.append(Paragraph("<b>Arbeitsinhalt:</b>", normal_style))
+            story.append(Paragraph(entry.content, normal_style))
+            story.append(Spacer(1, 6))
+
+            # Materialien
+            if entry.materials:
+                story.append(Paragraph("<b>Materialien:</b>", normal_style))
+                story.append(Paragraph(entry.materials, normal_style))
+                story.append(Spacer(1, 6))
+
+            # Notizen
+            if entry.notes:
+                story.append(Paragraph("<b>Notizen:</b>", normal_style))
+                story.append(Paragraph(entry.notes, normal_style))
+                story.append(Spacer(1, 6))
+
+            story.append(Spacer(1, 15))
+
+            # Seitenwechsel nach jedem 3. Eintrag
+            if (i + 1) % 3 == 0 and i < len(entries) - 1:
+                story.append(PageBreak())
+
+        # Fotos Sektion
+        if photos:
+            story.append(PageBreak())
+            story.append(Paragraph("Projektfotos", heading_style))
+            story.append(Spacer(1, 12))
+
+            photos_per_page = 4
+            for i, photo in enumerate(photos):
+                try:
+                    # Bild laden und skalieren
+                    img_path = os.path.join(app.config['UPLOAD_FOLDER'], photo.filename)
+                    if os.path.exists(img_path):
+                        # Bild öffnen und Größe prüfen
+                        with PILImage.open(img_path) as pil_img:
+                            # Maximale Größe für PDF
+                            max_width = 8 * cm
+                            max_height = 6 * cm
+
+                            # Aspect Ratio beibehalten
+                            img_width, img_height = pil_img.size
+                            aspect = img_width / img_height
+
+                            if aspect > max_width / max_height:
+                                # Bild ist breiter
+                                pdf_width = max_width
+                                pdf_height = max_width / aspect
+                            else:
+                                # Bild ist höher
+                                pdf_height = max_height
+                                pdf_width = max_height * aspect
+
+                        # Bild zu PDF hinzufügen
+                        img = Image(img_path, width=pdf_width, height=pdf_height)
+
+                        # Foto-Info
+                        photo_info = f"<b>{photo.original_filename}</b><br/>"
+                        photo_info += f"Datum: {photo.date_taken.strftime('%d.%m.%Y')}<br/>"
+                        if photo.description:
+                            photo_info += f"Beschreibung: {photo.description}"
+
+                        # Foto und Info in Tabelle
+                        photo_table = Table([[img, Paragraph(photo_info, normal_style)]],
+                                            colWidths=[pdf_width + 1 * cm, 8 * cm])
+                        photo_table.setStyle(TableStyle([
+                            ('ALIGN', (0, 0), (0, 0), 'CENTER'),
+                            ('ALIGN', (1, 0), (1, 0), 'LEFT'),
+                            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                            ('TOPPADDING', (0, 0), (-1, -1), 6),
+                            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                        ]))
+
+                        story.append(photo_table)
+                        story.append(Spacer(1, 12))
+
+                        # Seitenwechsel nach bestimmter Anzahl Fotos
+                        if (i + 1) % photos_per_page == 0 and i < len(photos) - 1:
+                            story.append(PageBreak())
+
+                except Exception as e:
+                    # Fehler beim Laden des Bildes - Info hinzufügen
+                    error_text = f"<b>{photo.original_filename}</b> (Bild konnte nicht geladen werden)<br/>"
+                    error_text += f"Datum: {photo.date_taken.strftime('%d.%m.%Y')}<br/>"
+                    if photo.description:
+                        error_text += f"Beschreibung: {photo.description}"
+
+                    story.append(Paragraph(error_text, normal_style))
+                    story.append(Spacer(1, 12))
+
+        # PDF generieren
+        doc.build(story)
+        buffer.seek(0)
+
+        # PDF als Download zurückgeben
+        filename = f"Bautagebuch_{project.name.replace(' ', '_')}_{date.today().strftime('%Y%m%d')}.pdf"
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'PDF-Export fehlgeschlagen: {str(e)}'}), 500
+
+
+@app.route('/api/export/pdf/entry/<int:entry_id>', methods=['GET'])
+def export_single_entry_pdf(entry_id):
+    """Einzelnen Eintrag als PDF exportieren"""
+    try:
+        entry = Entry.query.get_or_404(entry_id)
+        project = entry.project
+
+        # PDF in Memory erstellen
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=2 * cm,
+            leftMargin=2 * cm,
+            topMargin=2 * cm,
+            bottomMargin=2 * cm
+        )
+
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Titel
+        story.append(Paragraph(f"Bautagebuch-Eintrag", styles['Title']))
+        story.append(Paragraph(f"Projekt: {project.name}", styles['Heading1']))
+        story.append(Paragraph(f"Datum: {entry.date.strftime('%d.%m.%Y')}", styles['Heading2']))
+        story.append(Spacer(1, 20))
+
+        # Entry Details
+        if any([entry.weather, entry.temperature, entry.workers_count, entry.work_hours, entry.costs]):
+            story.append(Paragraph("Details", styles['Heading2']))
+
+            details_data = []
+            if entry.weather:
+                details_data.append(['Wetter:', entry.weather])
+            if entry.temperature:
+                details_data.append(['Temperatur:', f"{entry.temperature}°C"])
+            if entry.workers_count:
+                details_data.append(['Arbeiter:', str(entry.workers_count)])
+            if entry.work_hours:
+                details_data.append(['Arbeitsstunden:', f"{entry.work_hours} h"])
+            if entry.costs:
+                details_data.append(['Kosten:', f"{entry.costs:.2f} €"])
+
+            details_table = Table(details_data, colWidths=[4 * cm, 10 * cm])
+            details_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ]))
+
+            story.append(details_table)
+            story.append(Spacer(1, 20))
+
+        # Arbeitsinhalt
+        story.append(Paragraph("Arbeitsinhalt", styles['Heading2']))
+        story.append(Paragraph(entry.content, styles['Normal']))
+        story.append(Spacer(1, 15))
+
+        # Materialien
+        if entry.materials:
+            story.append(Paragraph("Materialien", styles['Heading2']))
+            story.append(Paragraph(entry.materials, styles['Normal']))
+            story.append(Spacer(1, 15))
+
+        # Notizen
+        if entry.notes:
+            story.append(Paragraph("Notizen", styles['Heading2']))
+            story.append(Paragraph(entry.notes, styles['Normal']))
+
+        # PDF generieren
+        doc.build(story)
+        buffer.seek(0)
+
+        filename = f"Eintrag_{entry.date.strftime('%Y%m%d')}.pdf"
+
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'PDF-Export fehlgeschlagen: {str(e)}'}), 500
 
 # Fehlerbehandlung
 @app.errorhandler(404)
